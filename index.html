@@ -212,9 +212,9 @@
   </button>
 </div>
 
-<!-- Vùng vẽ canvas: mở rộng chiều cao để chứa Biểu đồ Điện Trường E(x) chuẩn xác -->
+<!-- Vùng vẽ canvas -->
 <div class="canvas-container">
-  <canvas id="simCanvas" width="880" height="570"></canvas>
+  <canvas id="simCanvas" width="880" height="380"></canvas>
 </div>
 
 <!-- Nút điều khiển -->
@@ -222,14 +222,13 @@
   <button class="btn btn-play" id="btnPlay" onclick="togglePlay()">▶ Chạy tự động</button>
   <button class="btn btn-step" id="btnStep" onclick="stepForward()">⏭ Từng bước (Thuyết trình)</button>
   <button class="btn btn-reset" onclick="resetCurrentMode()">↺ Xem lại từ đầu</button>
-  <button class="btn toggle-efield" id="btnToggleE" onclick="toggleEField()">📊 Hiện/Ẩn Đồ thị E(x)</button>
 </div>
 
 <!-- Khung giải thích -->
 <div class="story-box">
   <div class="story-header" id="storyTitle">Bước 0: Trạng thái ban đầu</div>
   <div id="storyDesc">Đang tải...</div>
-  <div class="story-highlight" id="storyTakeaway">💡 <strong>Điểm cốt lõi về Điện trường:</strong> Hãy nhìn biểu đồ E(x) ở nửa dưới canvas để thấy sự biến thiên của đỉnh điện trường E_m.</div>
+  <div class="story-highlight" id="storyTakeaway">💡 <strong>Điểm cốt lõi:</strong> Quan sát mũi tên điện trường và vùng nghèo trên canvas.</div>
 </div>
 
 <!-- Chú thích -->
@@ -260,7 +259,6 @@ let stepIndex = 0;
 let progress = 0;
 let isPlaying = false;
 let flowTicker = 0;
-let showEGraph = true; // Bật tắt đồ thị E(x)
 
 // =========================================================================
 // NỘI DUNG THUYẾT MINH DỄ HIỂU KÈM ĐIỆN TRƯỜNG
@@ -364,10 +362,6 @@ function selectMode(mode) {
   updateStoryUI();
 }
 
-function toggleEField() {
-  showEGraph = !showEGraph;
-  document.getElementById('btnToggleE').innerText = showEGraph ? "📊 Ẩn Đồ thị E(x)" : "📊 Hiện Đồ thị E(x)";
-}
 
 // =========================================================================
 // VẼ MẠCH ĐIỆN VÀ BÓNG ĐÈN
@@ -696,7 +690,6 @@ function renderEq() {
     }
   }
 
-  drawEFieldGraph(depW, EmScale);
 }
 
 // 2. FORWARD BIAS
@@ -748,7 +741,6 @@ function renderForward() {
     }
   }
 
-  drawEFieldGraph(depW, EmScale);
 }
 
 // 3. REVERSE BIAS
@@ -804,7 +796,6 @@ function renderReverse() {
     }
   }
 
-  drawEFieldGraph(depW, EmScale);
 }
 
 // =========================================================================
