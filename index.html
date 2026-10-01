@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mô phỏng Toàn diện p–n Junction: Kèm Biểu đồ Điện Trường E(x)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #090d16;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: #e6edf3;
+    padding: 12px 10px 30px;
+    gap: 12px;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+    color: #58a6ff;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+
+  /* 3 Nút chọn chế độ */
+  .mode-selector {
+    display: flex;
+    gap: 10px;
+    background: #161b22;
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid #30363d;
+    max-width: 880px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    background: #21262d;
+    color: #8b949e;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+  }
+
+  .mode-btn span.sub {
+    font-size: 0.74rem;
+    font-weight: normal;
+    opacity: 0.8;
+  }
+
+  .mode-btn:hover {
+    color: #f0f6fc;
+    background: #30363d;
+  }
+
+  .mode-btn.active.eq {
+    background: #1f6feb;
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(31, 111, 235, 0.45);
+  }
+
+  .mode-btn.active.fwd {
+    background: #238636;
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(35, 134, 54, 0.45);
+  }
+
+  .mode-btn.active.rev {
+    background: #da3633;
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(218, 54, 51, 0.45);
+  }
+
+  .canvas-container {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+
+  canvas {
+    display: block;
+    background: #0d121c;
+  }
+
+  /* Bảng điều khiển */
+  .control-panel {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px 18px;
+    max-width: 880px;
+    width: 100%;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-play { background: #238636; color: white; }
+  .btn-play:hover { background: #2ea043; }
+  .btn-play.paused { background: #d29922; }
+
+  .btn-step { background: #1f6feb; color: white; }
+  .btn-step:hover { background: #388bfd; }
+
+  .btn-reset { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+  .btn-reset:hover { background: #30363d; }
+
+  .toggle-efield {
+    background: #30363d;
+    color: #f0883e;
+    border: 1px solid #f0883e;
+  }
+  .toggle-efield:hover { background: #3c444d; }
+
+  /* Khung giải thích */
+  .story-box {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 14px 20px;
+    max-width: 880px;
+    width: 100%;
+    font-size: 0.93rem;
+    line-height: 1.6;
+    color: #f0f6fc;
+  }
+
+  .story-header {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #e3b341;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .story-highlight {
+    background: rgba(240, 136, 62, 0.1);
+    border-left: 3px solid #f0883e;
+    padding: 8px 12px;
+    margin-top: 8px;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+    color: #ffd8a8;
+  }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    font-size: 0.82rem;
+    color: #8b949e;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    max-width: 880px;
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .sq  { width: 12px; height: 12px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<h1>⚛️ Mô phỏng p–n Junction: Cân bằng &bull; Thuận &bull; Nghịch &bull; Điện trường E(x)</h1>
+
+<!-- Bộ 3 chế độ -->
+<div class="mode-selector">
+  <button class="mode-btn active eq" id="mBtnEq" onclick="selectMode('eq')">
+    ⚖️ 1. p–n Junction (Cân bằng)
+    <span class="sub">W = W₀ &bull; E_m = E_m0 &bull; I = 0</span>
+  </button>
+  <button class="mode-btn" id="mBtnFwd" onclick="selectMode('forward')">
+    ⚡ 2. Phân cực thuận (Forward)
+    <span class="sub">W co lại &bull; E_m giảm &bull; Đèn sáng</span>
+  </button>
+  <button class="mode-btn" id="mBtnRev" onclick="selectMode('reverse')">
+    🛡️ 3. Phân cực nghịch (Reverse)
+    <span class="sub">W nở rộng &bull; E_m cực lớn &bull; Đèn tắt</span>
+  </button>
+</div>
+
+<!-- Vùng vẽ canvas: mở rộng chiều cao để chứa Biểu đồ Điện Trường E(x) chuẩn xác -->
+<div class="canvas-container">
+  <canvas id="simCanvas" width="880" height="570"></canvas>
+</div>
+
+<!-- Nút điều khiển -->
+<div class="control-panel">
+  <button class="btn btn-play" id="btnPlay" onclick="togglePlay()">▶ Chạy tự động</button>
+  <button class="btn btn-step" id="btnStep" onclick="stepForward()">⏭ Từng bước (Thuyết trình)</button>
+  <button class="btn btn-reset" onclick="resetCurrentMode()">↺ Xem lại từ đầu</button>
+  <button class="btn toggle-efield" id="btnToggleE" onclick="toggleEField()">📊 Hiện/Ẩn Đồ thị E(x)</button>
+</div>
+
+<!-- Khung giải thích -->
+<div class="story-box">
+  <div class="story-header" id="storyTitle">Bước 0: Trạng thái ban đầu</div>
+  <div id="storyDesc">Đang tải...</div>
+  <div class="story-highlight" id="storyTakeaway">💡 <strong>Điểm cốt lõi về Điện trường:</strong> Hãy nhìn biểu đồ E(x) ở nửa dưới canvas để thấy sự biến thiên của đỉnh điện trường E_m.</div>
+</div>
+
+<!-- Chú thích -->
+<div class="legend">
+  <div class="legend-item"><span class="dot" style="background:#f85149;"></span> Lỗ trống (h<sup>+</sup>)</div>
+  <div class="legend-item"><span class="dot" style="background:#1f6feb;"></span> Electron (e<sup>−</sup>)</div>
+  <div class="legend-item"><span class="sq" style="background:#8957e5; border:1px solid #d2a8ff;"></span> Ion A<sup>−</sup> (Cố định)</div>
+  <div class="legend-item"><span class="sq" style="background:#da3633; border:1px solid #ffa198;"></span> Ion D<sup>+</sup> (Cố định)</div>
+  <div class="legend-item"><span style="color:#f0883e; font-weight:bold;">⟵ E(x): Điện trường nội tại</span></div>
+  <div class="legend-item"><span style="color:#e3b341; font-weight:bold;">💡 Bóng đèn</span></div>
+</div>
+
+<script>
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+const MID_X = W / 2;
+
+// Lưới tinh thể
+const ROWS = 5;
+const ROW_Y = [120, 165, 210, 255, 300]; // 5 hàng
+const P_COLS = [MID_X - 45, MID_X - 110, MID_X - 200, MID_X - 290];
+const N_COLS = [MID_X + 45, MID_X + 110, MID_X + 200, MID_X + 290];
+
+let currentMode = 'eq';
+let stepIndex = 0;
+let progress = 0;
+let isPlaying = false;
+let flowTicker = 0;
+let showEGraph = true; // Bật tắt đồ thị E(x)
+
+// =========================================================================
+// NỘI DUNG THUYẾT MINH DỄ HIỂU KÈM ĐIỆN TRƯỜNG
+// =========================================================================
+const scripts = {
+  eq: [
+    {
+      title: "Bước 0: Hai phòng ban đầu (Chưa có điện trường)",
+      desc: "Hai khối bán dẫn P và N vừa được ghép lại. Toàn bộ mẫu trung hòa điện tích. Chưa có điện trường nội tại (E = 0).",
+      takeaway: "Điện trường E(x) = 0 trên toàn bộ mẫu."
+    },
+    {
+      title: "Bước 1: Khuếch tán — e⁻ và h⁺ bắt đầu dịch chuyển",
+      desc: "Do chênh lệch nồng độ, e⁻ từ N và h⁺ từ P ở sát ranh giới ùa sang nhau. Các hạt di chuyển làm ranh giới bắt đầu biến đổi.",
+      takeaway: "Bắt đầu xuất hiện chênh lệch điện tích nhẹ."
+    },
+    {
+      title: "Bước 2: Tái hợp (Recombination) — Ion lộ diện",
+      desc: "e⁻ và h⁺ gặp nhau tại ranh giới, kết hợp trung hòa và ĐỨNG YÊN. Để lại các Ion D⁺ (bên N) và Ion A⁻ (bên P) bị lộ trần.",
+      takeaway: "Vùng nghèo hình thành, điện trường E bắt đầu sinh ra hướng từ D⁺ sang A⁻."
+    },
+    {
+      title: "Bước 3: Vùng Nghèo & Đỉnh Điện Trường E_m lộ diện",
+      desc: "Vùng nghèo có độ rộng W₀. Các ion D⁺ và A⁻ tạo nên Điện Trường Nội E(x) hình tam giác, đạt cực đại E_m tại ranh giới metallurgical junction.",
+      takeaway: "Đỉnh điện trường E_m hướng từ N sang P (⟵), ngăn cản hạt tải tiếp tục khuếch tán."
+    },
+    {
+      title: "Bước 4: Cân bằng hoàn toàn — Hàng rào thế V_bi khóa hạt",
+      desc: "Lực điện trường cân bằng tuyệt đối với lực khuếch tán. Các electron bên trong bị điện trường cản lại và đứng yên. Độ rộng W₀ và đỉnh E_m đạt trạng thái cân bằng bền!",
+      takeaway: "Biểu đồ E(x) hình tam giác chuẩn xác: diện tích dưới đồ thị chính là điện thế tiếp xúc V_bi."
+    }
+  ],
+
+  forward: [
+    {
+      title: "Bước 0: Chuẩn bị nối nguồn Phân cực thuận",
+      desc: "Nối cực Dương (+) vào bên P, cực Âm (−) vào bên N. Nguồn ngoài chuẩn bị đưa điện trường ngoài vào cạnh tranh.",
+      takeaway: "Ban đầu vẫn giữ nguyên điện trường cân bằng E_m0 và độ rộng W₀."
+    },
+    {
+      title: "Bước 1: Điện trường ngoài triệt tiêu điện trường nội",
+      desc: "Điện trường ngoài E_ngoài hướng từ (+) sang (−), tức từ P sang N (⟶), NGƯỢC CHIỀU với điện trường nội E_nội (⟵). Chúng triệt tiêu lẫn nhau!",
+      takeaway: "Độ lớn điện trường tổng hợp suy giảm: |E_m| giảm rõ rệt."
+    },
+    {
+      title: "Bước 2: Hàng rào sụp đổ — Vùng Nghèo co rút (W < W₀)",
+      desc: "Vì điện trường cản bị triệt tiêu, lực đẩy của pin ép mạnh hai bên làm VÙNG NGHÈO THU HẸP LẠI (W rất mỏng). Đồ thị E(x) lùn xuống và co hẹp đáy!",
+      takeaway: "Đỉnh E_m hạ thấp, đáy tam giác W co hẹp. Hàng rào thế (V_bi − V_F) bị san phẳng."
+    },
+    {
+      title: "Bước 3: Dòng điện tuôn trào — BÓNG ĐÈN SÁNG RỰC!",
+      desc: "Điện trường cản không còn đủ sức chặn hạt. Hàng triệu electron và lỗ trống vượt rào ồ ạt sang phía đối diện, tạo dòng điện thuận I_F rất lớn. Đèn sáng rực rỡ!",
+      takeaway: "Dòng thuận I_F chạy mạnh mẽ. Diode ở trạng thái dẫn điện hoàn toàn."
+    }
+  ],
+
+  reverse: [
+    {
+      title: "Bước 0: Chuẩn bị nối nguồn Phân cực nghịch",
+      desc: "Đảo cực nguồn: Cực Âm (−) nối vào P, cực Dương (+) nối vào N. Nguồn ngoài sẽ hỗ trợ tăng cường điện trường nội!",
+      takeaway: "Cực nguồn cùng chiều với các ion bên trong."
+    },
+    {
+      title: "Bước 1: Điện trường ngoài cộng hưởng — Kéo dạt các hạt",
+      desc: "Điện trường ngoài cùng chiều (⟵) với điện trường nội (⟵). Cực (+) hút electron về phải, cực (−) hút lỗ trống về trái. Các hạt bị kéo lùi xa khỏi ranh giới!",
+      takeaway: "Điện trường tổng hợp tăng vọt: E_tổng = E_nội + E_ngoài."
+    },
+    {
+      title: "Bước 2: Vùng Nghèo mở rộng (W > W₀) — Đỉnh E_m tăng vọt!",
+      desc: "Khoảng trống giữa bị kéo toác ra, rất nhiều ion A⁻ và D⁺ bị lộ trần. Đồ thị E(x) mở rộng đáy gấp đôi và đỉnh E_m kéo sâu xuống cực kỳ nhọn!",
+      takeaway: "Đỉnh E_m đạt giá trị khổng lồ. Hàng rào điện thế (V_bi + V_R) cao như bức tường thành."
+    },
+    {
+      title: "Bước 3: Khóa chặt tuyệt đối — ĐÈN TẮT NGÚM, Dòng = 0!",
+      desc: "Điện trường E khổng lồ chặn đứng 100% dòng hạt đa số. BÓNG ĐÈN TẮT TỐI THUI (Chỉ có dòng rò thiểu số I₀ siêu nhỏ do nhiệt).",
+      takeaway: "Diode đóng van ngăn dòng điện. W lớn biến vùng nghèo thành tụ điện (ứng dụng Varactor diode!)."
+    }
+  ]
+};
+
+function updateStoryUI() {
+  const currentList = scripts[currentMode];
+  const item = currentList[stepIndex] || currentList[0];
+  document.getElementById('storyTitle').innerText = item.title;
+  document.getElementById('storyDesc').innerText = item.desc;
+  document.getElementById('storyTakeaway').innerHTML = `💡 <strong>Điểm cốt lõi về Điện trường:</strong> ${item.takeaway}`;
+}
+
+function selectMode(mode) {
+  currentMode = mode;
+  stepIndex = 0;
+  progress = 1;
+  isPlaying = false;
+  document.getElementById('btnPlay').innerText = "▶ Chạy tự động";
+  document.getElementById('btnPlay').classList.remove('paused');
+
+  document.getElementById('mBtnEq').className = 'mode-btn' + (mode === 'eq' ? ' active eq' : '');
+  document.getElementById('mBtnFwd').className = 'mode-btn' + (mode === 'forward' ? ' active fwd' : '');
+  document.getElementById('mBtnRev').className = 'mode-btn' + (mode === 'reverse' ? ' active rev' : '');
+
+  updateStoryUI();
+}
+
+function toggleEField() {
+  showEGraph = !showEGraph;
+  document.getElementById('btnToggleE').innerText = showEGraph ? "📊 Ẩn Đồ thị E(x)" : "📊 Hiện Đồ thị E(x)";
+}
+
+// =========================================================================
+// VẼ MẠCH ĐIỆN VÀ BÓNG ĐÈN
+// =========================================================================
+function drawCircuitAndBulb() {
+  const wireY = 46;
+  const pX = 85;
+  const nX = W - 85;
+  const batX = MID_X - 90;
+  const bulbX = MID_X + 90;
+
+  ctx.save();
+  ctx.strokeStyle = '#8b949e';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(pX, 78);
+  ctx.lineTo(pX, wireY);
+  ctx.lineTo(batX - 25, wireY);
+  ctx.moveTo(batX + 25, wireY);
+  ctx.lineTo(bulbX - 20, wireY);
+  ctx.moveTo(bulbX + 20, wireY);
+  ctx.lineTo(nX, wireY);
+  ctx.lineTo(nX, 78);
+  ctx.stroke();
+
+  // Nguồn Pin
+  if (currentMode === 'eq') {
+    ctx.fillStyle = '#8b949e';
+    ctx.font = 'bold 11px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText("✕ KHÔNG NỐI PIN (MẠCH HỞ)", batX, wireY - 12);
+  } else {
+    const isFwd = (currentMode === 'forward');
+    const leftIsPos = isFwd;
+
+    ctx.strokeStyle = leftIsPos ? '#f85149' : '#58a6ff';
+    ctx.lineWidth = leftIsPos ? 3 : 5;
+    ctx.beginPath();
+    ctx.moveTo(batX - 10, wireY - (leftIsPos ? 16 : 9));
+    ctx.lineTo(batX - 10, wireY + (leftIsPos ? 16 : 9));
+    ctx.stroke();
+
+    ctx.strokeStyle = !leftIsPos ? '#f85149' : '#58a6ff';
+    ctx.lineWidth = !leftIsPos ? 3 : 5;
+    ctx.beginPath();
+    ctx.moveTo(batX + 10, wireY - (!leftIsPos ? 16 : 9));
+    ctx.lineTo(batX + 10, wireY + (!leftIsPos ? 16 : 9));
+    ctx.stroke();
+
+    ctx.font = 'bold 15px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = leftIsPos ? '#f85149' : '#58a6ff';
+    ctx.fillText(leftIsPos ? '+' : '−', batX - 22, wireY - 10);
+    ctx.fillStyle = !leftIsPos ? '#f85149' : '#58a6ff';
+    ctx.fillText(!leftIsPos ? '+' : '−', batX + 22, wireY - 10);
+
+    ctx.font = 'bold 11px Segoe UI';
+    ctx.fillStyle = isFwd ? '#7ee787' : '#ffa198';
+    ctx.fillText(isFwd ? "PIN THUẬN (V_F)" : "PIN NGHỊCH (V_R)", batX, wireY - 22);
+  }
+
+  // Bóng đèn
+  const isBulbLit = (currentMode === 'forward' && stepIndex >= 3);
+  if (isBulbLit) {
+    ctx.fillStyle = 'rgba(242, 204, 96, 0.3)';
+    ctx.beginPath();
+    ctx.arc(bulbX, wireY, 24, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = isBulbLit ? '#f2cc60' : '#21262d';
+  ctx.strokeStyle = isBulbLit ? '#ffffff' : '#8b949e';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(bulbX, wireY, 11, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.font = 'bold 11px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = isBulbLit ? '#f2cc60' : '#8b949e';
+  ctx.fillText(isBulbLit ? "💡 ĐÈN SÁNG" : "💡 ĐÈN TẮT", bulbX, wireY - 18);
+
+  // Mũi tên dòng điện
+  if (isBulbLit) {
+    const dotPos = (flowTicker * 80) % 120;
+    ctx.fillStyle = '#f2cc60';
+    ctx.beginPath();
+    ctx.arc(pX + dotPos, wireY, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// =========================================================================
+// VẼ KHỐI BÁN DẪN P VÀ N
+// =========================================================================
+function drawBackground() {
+  const crystalTop = 75;
+  const crystalBot = 345;
+
+  // P-side
+  ctx.fillStyle = '#17111c';
+  ctx.fillRect(0, crystalTop, MID_X, crystalBot - crystalTop);
+
+  // N-side
+  ctx.fillStyle = '#0f1826';
+  ctx.fillRect(MID_X, crystalTop, MID_X, crystalBot - crystalTop);
+
+  // Ranh giới tiếp xúc metallurgical junction
+  ctx.strokeStyle = '#388bfd';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(MID_X, crystalTop);
+  ctx.lineTo(MID_X, crystalBot);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Tiêu đề vùng
+  ctx.font = 'bold 14px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ff7b72';
+  ctx.fillText("VÙNG P (h⁺)", MID_X / 2, 94);
+  ctx.fillStyle = '#58a6ff';
+  ctx.fillText("VÙNG N (e⁻)", MID_X + MID_X / 2, 94);
+}
+
+// =========================================================================
+// VẼ ĐỒ THỊ BIỂU DIỄN ĐIỆN TRƯỜNG E(x) ĐỒNG BỘ Ở DƯỚI ĐÁY
+// =========================================================================
+function drawEFieldGraph(depW, EmScale) {
+  if (!showEGraph) return;
+
+  const graphTop = 365;
+  const graphBot = 545;
+  const axisY = 395; // Trục hoành E = 0
+
+  ctx.save();
+
+  // Nền đồ thị
+  ctx.fillStyle = '#111622';
+  ctx.fillRect(20, graphTop, W - 40, graphBot - graphTop);
+  ctx.strokeStyle = '#30363d';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(20, graphTop, W - 40, graphBot - graphTop);
+
+  // Tiêu đề đồ thị
+  ctx.font = 'bold 12px Segoe UI';
+  ctx.fillStyle = '#f0883e';
+  ctx.textAlign = 'left';
+  ctx.fillText("📊 PHÂN BỐ ĐIỆN TRƯỜNG NỘI E(x) THEO TOẠ ĐỘ x", 35, graphTop + 20);
+
+  // Trục hoành x (E = 0)
+  ctx.strokeStyle = '#8b949e';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(40, axisY);
+  ctx.lineTo(W - 40, axisY);
+  ctx.stroke();
+
+  // Nhãn trục hoành
+  ctx.font = '11px Segoe UI';
+  ctx.fillStyle = '#8b949e';
+  ctx.textAlign = 'right';
+  ctx.fillText("x ⟶", W - 45, axisY - 6);
+  ctx.fillText("E = 0", 75, axisY - 6);
+
+  // Vị trí ranh giới metallurgical junction (x = 0)
+  ctx.strokeStyle = '#388bfd';
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(MID_X, axisY - 15);
+  ctx.lineTo(MID_X, graphBot - 10);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#58a6ff';
+  ctx.fillText("x = 0 (Ranh giới)", MID_X, axisY - 8);
+
+  // Nếu có vùng nghèo (depW > 0 và EmScale > 0)
+  if (depW > 5 && EmScale > 0.05) {
+    const xp = MID_X - depW;
+    const xn = MID_X + depW;
+    // Đỉnh điện trường E_m hướng xuống (chiều âm vì E hướng sang trái ⟵)
+    const peakY = axisY + Math.min(130, 95 * EmScale);
+
+    // Tô diện tích tam giác E(x)
+    const grad = ctx.createLinearGradient(0, axisY, 0, peakY);
+    grad.addColorStop(0, 'rgba(240, 136, 62, 0.05)');
+    grad.addColorStop(1, 'rgba(240, 136, 62, 0.35)');
+    ctx.fillStyle = grad;
+
+    ctx.beginPath();
+    ctx.moveTo(xp, axisY);
+    ctx.lineTo(MID_X, peakY);
+    ctx.lineTo(xn, axisY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Vẽ đường viền tam giác E(x)
+    ctx.strokeStyle = '#f0883e';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(xp, axisY);
+    ctx.lineTo(MID_X, peakY);
+    ctx.lineTo(xn, axisY);
+    ctx.stroke();
+
+    // Đánh dấu biên -xp và +xn
+    ctx.fillStyle = '#ff7b72';
+    ctx.font = 'bold 11px Segoe UI';
+    ctx.fillText("−x_p", xp, axisY - 8);
+    ctx.beginPath();
+    ctx.arc(xp, axisY, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#58a6ff';
+    ctx.fillText("+x_n", xn, axisY - 8);
+    ctx.beginPath();
+    ctx.arc(xn, axisY, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Đánh dấu đỉnh điện trường cực đại E_m
+    ctx.fillStyle = '#f0883e';
+    ctx.beginPath();
+    ctx.arc(MID_X, peakY, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.font = 'bold 12px Segoe UI';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Đỉnh E_m (${(EmScale * 100).toFixed(0)}%)`, MID_X + 10, peakY);
+
+    // Ký hiệu độ rộng W
+    ctx.strokeStyle = '#e3b341';
+    ctx.lineWidth = 1.2;
+    const markerY = graphBot - 16;
+    ctx.beginPath();
+    ctx.moveTo(xp, markerY);
+    ctx.lineTo(xn, markerY);
+    ctx.stroke();
+
+    // 2 đầu mút
+    ctx.beginPath();
+    ctx.moveTo(xp, markerY - 4); ctx.lineTo(xp, markerY + 4);
+    ctx.moveTo(xn, markerY - 4); ctx.lineTo(xn, markerY + 4);
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#e3b341';
+    ctx.font = 'bold 11px Segoe UI';
+    ctx.fillText(`Độ rộng Vùng Nghèo W = x_n + x_p`, MID_X, markerY - 4);
+  } else {
+    // Chưa có điện trường
+    ctx.font = 'italic 12px Segoe UI';
+    ctx.fillStyle = '#8b949e';
+    ctx.textAlign = 'center';
+    ctx.fillText("Chưa hình thành vùng nghèo ⟶ E(x) = 0", MID_X, axisY + 45);
+  }
+
+  ctx.restore();
+}
+
+// =========================================================================
+// RENDER TỪNG CHẾ ĐỘ
+// =========================================================================
+
+// 1. CÂN BẰNG
+function renderEq() {
+  let depW = 0;
+  let EmScale = 0;
+
+  if (stepIndex === 2) {
+    depW = 70 * progress;
+    EmScale = 0.5 * progress;
+  } else if (stepIndex >= 3) {
+    depW = 140;
+    EmScale = 1.0; // Chuẩn 100%
+  }
+
+  if (depW > 0) {
+    drawDepletionZone(depW, '#d29922', 'rgba(210, 153, 34, 0.12)', 'VÙNG NGHÈO CÂN BẰNG (W₀)');
+  }
+
+  // Mũi tên điện trường trong khối tinh thể
+  if (stepIndex >= 3) {
+    drawEFieldVectors(depW * 0.75, "Điện trường nội E_bi ⟵", 1.0);
+  }
+
+  drawMatrixIons(c => (c === 0 || c === 1) && stepIndex >= 3);
+
+  // Hạt tải P
+  for (let c = 0; c < P_COLS.length; c++) {
+    for (let r = 0; r < ROWS; r++) {
+      const y = ROW_Y[r];
+      let x = P_COLS[c] + 16;
+      if (c === 0 || c === 1) {
+        if (stepIndex === 1) x += (MID_X - 10 - x) * progress;
+        else if (stepIndex >= 2) x = MID_X - 8;
+      } else if (stepIndex === 4 && c === 2) {
+        x += Math.sin(progress * Math.PI) * 12;
+      }
+      if ((c === 0 || c === 1) && stepIndex >= 2) {
+        drawRecombMarker(MID_X - (c === 0 ? 6 : 14), y);
+      } else {
+        drawHole(x, y);
+      }
+    }
+  }
+
+  // Hạt tải N
+  for (let c = 0; c < N_COLS.length; c++) {
+    for (let r = 0; r < ROWS; r++) {
+      const y = ROW_Y[r];
+      let x = N_COLS[c] - 16;
+      if (c === 0 || c === 1) {
+        if (stepIndex === 1) x += (MID_X + 10 - x) * progress;
+        else if (stepIndex >= 2) x = MID_X + 8;
+      } else if (stepIndex === 4 && c === 2) {
+        x -= Math.sin(progress * Math.PI) * 12;
+      }
+      if (!((c === 0 || c === 1) && stepIndex >= 2)) {
+        drawElectron(x, y);
+      }
+    }
+  }
+
+  drawEFieldGraph(depW, EmScale);
+}
+
+// 2. FORWARD BIAS
+function renderForward() {
+  let depW = 140;
+  let EmScale = 1.0;
+
+  if (stepIndex === 1) {
+    depW = 100;
+    EmScale = 0.65;
+  } else if (stepIndex >= 2) {
+    depW = 38;
+    EmScale = 0.25; // Điện trường bị triệt tiêu rất mạnh
+  }
+
+  drawDepletionZone(depW, '#238636', 'rgba(35, 134, 54, 0.14)', 
+    stepIndex >= 2 ? "VÙNG NGHÈO THU HẸP (W << W₀)" : "VÙNG NGHÈO ĐANG CO LẠI");
+
+  // Mũi tên điện trường suy yếu
+  if (depW > 40) {
+    drawEFieldVectors(depW * 0.7, "E_nội bị triệt tiêu (Rất yếu)", EmScale);
+  }
+
+  drawMatrixIons(c => (c === 0 && depW > 50));
+
+  const isFlowing = (stepIndex >= 3);
+  for (let r = 0; r < ROWS; r++) {
+    const y = ROW_Y[r];
+    for (let c = 0; c < P_COLS.length; c++) {
+      let x = P_COLS[c] + 16;
+      if (stepIndex === 1) x += 20 * progress;
+      else if (stepIndex === 2) x = Math.min(MID_X - 10, x + 35);
+      else if (isFlowing) {
+        x += (flowTicker * 55) % (W - 120);
+        if (x > W - 60) x -= (W - 140);
+      }
+      drawHole(x, y);
+    }
+
+    for (let c = 0; c < N_COLS.length; c++) {
+      let x = N_COLS[c] - 16;
+      if (stepIndex === 1) x -= 20 * progress;
+      else if (stepIndex === 2) x = Math.max(MID_X + 10, x - 35);
+      else if (isFlowing) {
+        x -= (flowTicker * 55) % (W - 120);
+        if (x < 60) x += (W - 140);
+      }
+      drawElectron(x, y);
+    }
+  }
+
+  drawEFieldGraph(depW, EmScale);
+}
+
+// 3. REVERSE BIAS
+function renderReverse() {
+  let depW = 140;
+  let EmScale = 1.0;
+
+  if (stepIndex === 1) {
+    depW = 180;
+    EmScale = 1.4;
+  } else if (stepIndex >= 2) {
+    depW = 240;
+    EmScale = 1.85; // Điện trường cực mạnh
+  }
+
+  drawDepletionZone(depW, '#da3633', 'rgba(218, 54, 51, 0.16)', 
+    stepIndex >= 2 ? "VÙNG NGHÈO NỞ RỘNG (W >> W₀)" : "VÙNG NGHÈO NỞ RỘNG");
+
+  // Điện trường nội cực mạnh
+  drawEFieldVectors(depW * 0.75, "Điện trường E cực mạnh ⟵", EmScale, '#da3633');
+
+  drawMatrixIons(c => {
+    if (stepIndex === 0) return (c === 0 || c === 1);
+    if (c === 0 || c === 1) return true;
+    if (c === 2 && stepIndex >= 2) return true;
+    return false;
+  });
+
+  for (let r = 0; r < ROWS; r++) {
+    const y = ROW_Y[r];
+    for (let c = 0; c < P_COLS.length; c++) {
+      let x = P_COLS[c] + 16;
+      if (stepIndex >= 1) {
+        if (c >= 2) {
+          x = Math.max(30, P_COLS[c] - (stepIndex >= 2 ? 40 : 20));
+          drawHole(x, y);
+        }
+      } else {
+        drawHole(x, y);
+      }
+    }
+
+    for (let c = 0; c < N_COLS.length; c++) {
+      let x = N_COLS[c] - 16;
+      if (stepIndex >= 1) {
+        if (c >= 2) {
+          x = Math.min(W - 30, N_COLS[c] + (stepIndex >= 2 ? 40 : 20));
+          drawElectron(x, y);
+        }
+      } else {
+        drawElectron(x, y);
+      }
+    }
+  }
+
+  drawEFieldGraph(depW, EmScale);
+}
+
+// =========================================================================
+// TIỆN ÍCH VẼ
+// =========================================================================
+function drawDepletionZone(depW, strokeCol, fillCol, label) {
+  const crystalTop = 75;
+  const crystalBot = 345;
+  const leftX = MID_X - depW;
+
+  ctx.fillStyle = fillCol;
+  ctx.fillRect(leftX, crystalTop, depW * 2, crystalBot - crystalTop);
+
+  ctx.strokeStyle = strokeCol;
+  ctx.lineWidth = 1.6;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(leftX, crystalTop, depW * 2, crystalBot - crystalTop);
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = strokeCol;
+  ctx.font = 'bold 11px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, MID_X, crystalBot - 10);
+}
+
+function drawEFieldVectors(span, text, scale, col = '#f0883e') {
+  ctx.save();
+  ctx.strokeStyle = col;
+  ctx.fillStyle = col;
+  ctx.lineWidth = Math.max(1.5, 2.5 * scale);
+
+  const arrowYs = [150, 235];
+  for (let ay of arrowYs) {
+    drawArrow(MID_X + span, ay, MID_X - span, ay);
+  }
+
+  ctx.font = 'bold 11.5px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillText(text, MID_X, 102);
+  ctx.restore();
+}
+
+function drawArrow(x1, y1, x2, y2) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - 10 * Math.cos(angle - Math.PI / 6), y2 - 10 * Math.sin(angle - Math.PI / 6));
+  ctx.lineTo(x2 - 10 * Math.cos(angle + Math.PI / 6), y2 - 10 * Math.sin(angle + Math.PI / 6));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawMatrixIons(isExposedFn) {
+  for (let c = 0; c < P_COLS.length; c++) {
+    const x = P_COLS[c];
+    const exposed = isExposedFn(c);
+    for (let r = 0; r < ROWS; r++) {
+      const y = ROW_Y[r];
+      ctx.save();
+      ctx.fillStyle = exposed ? '#8957e5' : '#2d1f42';
+      ctx.strokeStyle = exposed ? '#d2a8ff' : '#4e3373';
+      ctx.lineWidth = exposed ? 1.5 : 1;
+      ctx.beginPath();
+      ctx.roundRect(x - 12, y - 12, 24, 24, 4);
+      ctx.fill(); ctx.stroke();
+
+      ctx.fillStyle = exposed ? '#ffffff' : '#a371f7';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText("A⁻", x, y);
+      ctx.restore();
+    }
+  }
+
+  for (let c = 0; c < N_COLS.length; c++) {
+    const x = N_COLS[c];
+    const exposed = isExposedFn(c);
+    for (let r = 0; r < ROWS; r++) {
+      const y = ROW_Y[r];
+      ctx.save();
+      ctx.fillStyle = exposed ? '#da3633' : '#4c1a1a';
+      ctx.strokeStyle = exposed ? '#ffa198' : '#7a2828';
+      ctx.lineWidth = exposed ? 1.5 : 1;
+      ctx.beginPath();
+      ctx.roundRect(x - 12, y - 12, 24, 24, 4);
+      ctx.fill(); ctx.stroke();
+
+      ctx.fillStyle = exposed ? '#ffffff' : '#ff7b72';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText("D⁺", x, y);
+      ctx.restore();
+    }
+  }
+}
+
+function drawHole(x, y) {
+  ctx.save();
+  ctx.fillStyle = '#f85149';
+  ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 11px Arial';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText("+", x, y);
+  ctx.restore();
+}
+
+function drawElectron(x, y) {
+  ctx.save();
+  ctx.fillStyle = '#1f6feb';
+  ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px Arial';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText("−", x, y);
+  ctx.restore();
+}
+
+function drawRecombMarker(x, y) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(35, 134, 54, 0.45)';
+  ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#3fb950'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#7ee787'; ctx.font = 'bold 8px Segoe UI';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText("Khóa", x, y);
+  ctx.restore();
+}
+
+// =========================================================================
+// MAIN LOOP
+// =========================================================================
+function render() {
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawCircuitAndBulb();
+
+  if (currentMode === 'eq') renderEq();
+  else if (currentMode === 'forward') renderForward();
+  else if (currentMode === 'reverse') renderReverse();
+}
+
+function loop() {
+  if (progress < 1) {
+    progress += 0.03;
+    if (progress > 1) progress = 1;
+  }
+  flowTicker += 0.012;
+  render();
+  requestAnimationFrame(loop);
+}
+
+// =========================================================================
+// CONTROLS
+// =========================================================================
+function stepForward() {
+  isPlaying = false;
+  document.getElementById('btnPlay').innerText = "▶ Chạy tự động";
+  document.getElementById('btnPlay').classList.remove('paused');
+  const maxSteps = scripts[currentMode].length;
+  stepIndex = (stepIndex + 1) % maxSteps;
+  progress = 0;
+  updateStoryUI();
+}
+
+function togglePlay() {
+  if (isPlaying) {
+    isPlaying = false;
+    document.getElementById('btnPlay').innerText = "▶ Tiếp tục";
+    document.getElementById('btnPlay').classList.remove('paused');
+  } else {
+    isPlaying = true;
+    document.getElementById('btnPlay').innerText = "⏸ Tạm dừng";
+    document.getElementById('btnPlay').classList.add('paused');
+    const maxSteps = scripts[currentMode].length;
+    if (stepIndex >= maxSteps - 1) stepIndex = 0;
+    runSequence();
+  }
+}
+
+function runSequence() {
+  if (!isPlaying) return;
+  const maxSteps = scripts[currentMode].length;
+  stepIndex = (stepIndex + 1) % maxSteps;
+  progress = 0;
+  updateStoryUI();
+
+  if (stepIndex < maxSteps - 1) {
+    setTimeout(() => { if (isPlaying) runSequence(); }, 1800);
+  } else {
+    isPlaying = false;
+    document.getElementById('btnPlay').innerText = "▶ Chạy lại";
+    document.getElementById('btnPlay').classList.remove('paused');
+  }
+}
+
+function resetCurrentMode() {
+  isPlaying = false;
+  stepIndex = 0;
+  progress = 1;
+  document.getElementById('btnPlay').innerText = "▶ Chạy tự động";
+  document.getElementById('btnPlay').classList.remove('paused');
+  updateStoryUI();
+}
+
+selectMode('eq');
+loop();
+</script>
+</body>
+</html>
